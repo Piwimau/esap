@@ -1,0 +1,13 @@
+option(
+    'native',
+    type: 'boolean',
+    value: false,
+    description: 'Enable machine-specific optimizations (default: false).',
+)
+option(
+    'impl',
+    type: 'combo',
+    choices: ['custom', 'fftw', 'opencl'],
+    value: 'fftw',
+    description: 'Select the FFT implementation to use (default: fftw).',
+)
