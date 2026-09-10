@@ -1,9 +1,9 @@
 import argparse
 import csv
 import itertools
+import json
 import numpy as np
 import os
-import re
 import shutil
 import subprocess
 import wave
@@ -70,11 +70,6 @@ FIELD_NAMES = [
     "cpu_median_ms",
     "cpu_stddev_ms",
 ]
-
-ROW_REGEX = re.compile(
-    r"│\s+(Wall|CPU)\s+│\s+([\d.]+)\s+ms\s+│\s+([\d.]+)\s+ms\s+│"
-    r"\s+([\d.]+)\s+ms\s+│\s+([\d.]+)\s+ms\s+│\s+([\d.]+)\s+ms\s+│"
-)
 
 
 def generate_audio_files(audio_dir: str) -> None:
@@ -221,6 +216,7 @@ def run_benchmarks(
             cmd = [
                 binaries[impl],
                 "--benchmark",
+                "--bench-format=json",
                 f"--warmups={round.warmups}",
                 f"--iterations={round.iterations}",
                 f"--phase={phase}",
@@ -240,18 +236,7 @@ def run_benchmarks(
                 print("Standard Error:")
                 print(result.stderr)
                 continue
-            rows = {}
-            for match in ROW_REGEX.finditer(result.stdout):
-                kind, min, max, mean, median, stddev = match.groups()
-                assert kind in ("Wall", "CPU")
-                rows[kind] = {
-                    "min_ms": float(min),
-                    "max_ms": float(max),
-                    "mean_ms": float(mean),
-                    "median_ms": float(median),
-                    "stddev_ms": float(stddev),
-                }
-            assert len(rows) == 2
+            data = json.loads(result.stdout)
             writer.writerow(
                 {
                     "impl": impl,
@@ -260,16 +245,16 @@ def run_benchmarks(
                     "sample_rate_hz": sample_rate,
                     "channels": channels,
                     "filter": filter_desc,
-                    "wall_min_ms": rows["Wall"]["min_ms"],
-                    "wall_max_ms": rows["Wall"]["max_ms"],
-                    "wall_mean_ms": rows["Wall"]["mean_ms"],
-                    "wall_median_ms": rows["Wall"]["median_ms"],
-                    "wall_stddev_ms": rows["Wall"]["stddev_ms"],
-                    "cpu_min_ms": rows["CPU"]["min_ms"],
-                    "cpu_max_ms": rows["CPU"]["max_ms"],
-                    "cpu_mean_ms": rows["CPU"]["mean_ms"],
-                    "cpu_median_ms": rows["CPU"]["median_ms"],
-                    "cpu_stddev_ms": rows["CPU"]["stddev_ms"],
+                    "wall_min_ms": data["wall"]["min_ms"],
+                    "wall_max_ms": data["wall"]["max_ms"],
+                    "wall_mean_ms": data["wall"]["mean_ms"],
+                    "wall_median_ms": data["wall"]["median_ms"],
+                    "wall_stddev_ms": data["wall"]["stdDev_ms"],
+                    "cpu_min_ms": data["cpu"]["min_ms"],
+                    "cpu_max_ms": data["cpu"]["max_ms"],
+                    "cpu_mean_ms": data["cpu"]["mean_ms"],
+                    "cpu_median_ms": data["cpu"]["median_ms"],
+                    "cpu_stddev_ms": data["cpu"]["stdDev_ms"],
                 }
             )
             f.flush()

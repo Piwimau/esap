@@ -4,9 +4,12 @@
 #include <memory>
 #include <print>
 #include "esap/export.hpp"
-#include "esap/file-deleter.hpp"
+#include "esap/func-deleter.hpp"
 
 namespace esap {
+
+/** @brief Represents a custom deleter for `std::FILE` handles. */
+using FileDeleter = FuncDeleter<&std::fclose>;
 
 void export_spectrum(
     usize numChannels,

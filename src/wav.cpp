@@ -11,10 +11,13 @@
 #include <span>
 #include <utility>
 #include "esap/exceptions.hpp"
-#include "esap/file-deleter.hpp"
+#include "esap/func-deleter.hpp"
 #include "esap/wav.hpp"
 
 namespace esap {
+
+/** @brief Represents a custom deleter for `std::FILE` handles. */
+using FileDeleter = FuncDeleter<&std::fclose>;
 
 /** @brief The chunk ID for the `RIFF` chunk. */
 static constexpr std::array<char, 4> RIFF_ID = { 'R', 'I', 'F', 'F' };
@@ -91,7 +94,7 @@ Wav::Wav(AudioFormat format, std::unique_ptr<f32[]> samples)
  */
 template<std::unsigned_integral T>
 requires (sizeof(T) == 2) || (sizeof(T) == 4)
-static inline T read_le(std::span<const byte, sizeof(T)> src) noexcept {
+static T read_le(std::span<const byte, sizeof(T)> src) noexcept {
     std::array<byte, sizeof(T)> buffer;
     std::ranges::copy(src, buffer.begin());
     T value = std::bit_cast<T>(buffer);
@@ -116,7 +119,7 @@ static inline T read_le(std::span<const byte, sizeof(T)> src) noexcept {
  */
 template<std::unsigned_integral T>
 requires (sizeof(T) == 4)
-static inline T read_le(std::span<const byte, 3> src) noexcept {
+static T read_le(std::span<const byte, 3> src) noexcept {
     std::array<byte, 4> buffer;
     std::ranges::copy(src, buffer.begin());
     buffer[3] = static_cast<byte>(0);
@@ -143,7 +146,7 @@ static inline T read_le(std::span<const byte, 3> src) noexcept {
  */
 template<std::unsigned_integral T>
 requires (sizeof(T) == 2) || (sizeof(T) == 4)
-static inline T read_le(std::FILE* file) {
+static T read_le(std::FILE* file) {
     assert(file != nullptr);
     std::array<byte, sizeof(T)> buffer;
     if (std::fread(buffer.data(), buffer.size(), 1, file) != 1) {
@@ -170,7 +173,7 @@ static inline T read_le(std::FILE* file) {
  */
 template<std::unsigned_integral T>
 requires (sizeof(T) == 2) || (sizeof(T) == 4)
-static inline void write_le(std::span<byte, sizeof(T)> dst, T value) noexcept {
+static void write_le(std::span<byte, sizeof(T)> dst, T value) noexcept {
     if constexpr (std::endian::native == std::endian::big) {
         value = std::byteswap(value);
     }
@@ -194,7 +197,7 @@ static inline void write_le(std::span<byte, sizeof(T)> dst, T value) noexcept {
  */
 template<std::unsigned_integral T>
 requires (sizeof(T) == 4)
-static inline void write_le(std::span<byte, 3> dst, T value) noexcept {
+static void write_le(std::span<byte, 3> dst, T value) noexcept {
     if constexpr (std::endian::native == std::endian::big) {
         value = std::byteswap(value);
     }
@@ -215,7 +218,7 @@ static inline void write_le(std::span<byte, 3> dst, T value) noexcept {
  */
 template<std::unsigned_integral T>
 requires (sizeof(T) == 2) || (sizeof(T) == 4)
-static inline void write_le(std::FILE* file, T value) {
+static void write_le(std::FILE* file, T value) {
     assert(file != nullptr);
     if constexpr (std::endian::native == std::endian::big) {
         value = std::byteswap(value);

@@ -88,8 +88,9 @@ include/
     bench.hpp         # Interface of the benchmarking module
     exceptions.hpp
     export.hpp        # Interface of the export module
-    file-deleter.hpp
     filter.hpp        # Types for representing filters
+    func-deleter.hpp
+    gpu-context.hpp   # Interface for OpenCL GPU context management
     stft.hpp          # Interface of the STFT module
     types.hpp
     wav.hpp           # Interface of the WAV module
@@ -102,10 +103,13 @@ scripts/
   requirements.txt    # External dependencies of the scripts
 src/
   bench.cpp           # Implementation of the benchmarking module
+  custom-stft.cpp     # Custom implementation of the STFT module
   export.cpp          # Implementation of the export module
+  fftw-stft.cpp       # FFTW-based implementation of the STFT module
+  gpu-context.cpp     # Implementation for OpenCL GPU context management
   kernels.cl          # OpenCL kernels for the STFT module
   main.cpp            # Main entry point of the pipeline
-  stft.cpp            # Implementation of the STFT module
+  opencl-stft.cpp     # OpenCL-based implementation of the STFT module
   wav.cpp             # Implementation of the WAV module
 subprojects/          # External dependencies of the pipeline
   ...
@@ -167,7 +171,7 @@ Besides that, the pipeline depends on the following external dependencies
   vendors.
 
   ```shell
-  sudo dnf install opencl-headers OpenCL-ICD-Loader
+  sudo dnf install opencl-headers ocl-icd ocl-icd-devel
   ```
 
 * **[VkFFT](https://github.com/DTolm/VkFFT)**: A highly-optimized header-only
@@ -277,28 +281,29 @@ Usage: esap [OPTION]... FILE
 Process the waveform audio file FILE.
 
 Options:
-  -b, --benchmark         Benchmark the execution time (excluding I/O).
-      --warmups=N         Perform N warmup iterations before benchmarking (default: 10).
-      --iterations=N      Perform N benchmark iterations (default: 100).
-      --phase=PHASE       Benchmark only the specified phase of the audio pipeline.
-                          PHASE can be one of the following:
-                            end-to-end (default)
-                            forward-only
-                            inverse-only
-                            filter-only
-  -f, --filter=SPEC       Apply the specified filter.
-                          SPEC can be one of the following:
-                            lowpass:FREQ
-                            highpass:FREQ
-                            bandpass:FREQ_LOW:FREQ_HIGH
-                            bandstop:FREQ_LOW:FREQ_HIGH
-                          FREQ, FREQ_LOW and FREQ_HIGH are cutoff frequencies in Hz.
-                          Zero or more filters can be specified, which are applied in the given order.
-  -o, --output=FILE       Write the processed audio to FILE.
-  -s, --spectrum=FILE     Write the spectrum of the processed audio to FILE in CSV format.
-  -S, --spectrogram=FILE  Write the spectrogram of the processed audio to FILE in CSV format.
-  -h, --help              Display this help and exit.
-  -v, --version           Display version information and exit.
+  -b, --benchmark                  Benchmark the execution time (excluding I/O).
+      --bench-format={table|json}  Select the format of the benchmark output (default: table).
+      --warmups=N                  Perform N warmup iterations before benchmarking (default: 10).
+      --iterations=N               Perform N benchmark iterations (default: 100).
+      --phase=PHASE                Benchmark only the specified phase of the audio pipeline (default: end-to-end).
+                                   PHASE can be one of the following:
+                                     end-to-end
+                                     forward-only
+                                     inverse-only
+                                     filter-only
+  -f, --filter=SPEC                Apply the specified filter.
+                                   SPEC can be one of the following:
+                                     lowpass:FREQ
+                                     highpass:FREQ
+                                     bandpass:FREQ_LOW:FREQ_HIGH
+                                     bandstop:FREQ_LOW:FREQ_HIGH
+                                   FREQ, FREQ_LOW and FREQ_HIGH are cutoff frequencies in Hz.
+                                   Zero or more filters can be specified, which are applied in the given order.
+  -o, --output=FILE                Write the processed audio to FILE.
+  -s, --spectrum=FILE              Write the spectrum of the processed audio to FILE in CSV format.
+  -S, --spectrogram=FILE           Write the spectrogram of the processed audio to FILE in CSV format.
+  -h, --help                       Display this help and exit.
+  -v, --version                    Display version information and exit.
 ```
 
 > [!NOTE]

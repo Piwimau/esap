@@ -47,26 +47,26 @@ if cpp.get_id() == 'gcc'
     deps += cpp.find_library('stdc++exp')
 endif
 
-impl = get_option('impl')
-if impl == 'custom'
-    add_project_arguments('-DIMPL_CUSTOM', language: 'cpp')
-elif impl == 'fftw'
-    add_project_arguments('-DIMPL_FFTW', language: 'cpp')
-    deps += dependency('fftw3f')
-elif impl == 'opencl'
-    add_project_arguments('-DIMPL_OPENCL', language: 'cpp')
-    deps += dependency('OpenCL')
-    deps += dependency('VkFFT')
-endif
-
 incs = include_directories('include')
 
 srcs = files(
     'src/bench.cpp',
     'src/export.cpp',
     'src/main.cpp',
-    'src/stft.cpp',
     'src/wav.cpp',
 )
+
+impl = get_option('impl')
+if impl == 'custom'
+    srcs += files('src/custom-stft.cpp')
+elif impl == 'fftw'
+    srcs += files('src/fftw-stft.cpp')
+    deps += dependency('fftw3f')
+elif impl == 'opencl'
+    add_project_arguments('-DESAP_USE_OPENCL', language: 'cpp')
+    srcs += files('src/gpu-context.cpp', 'src/opencl-stft.cpp')
+    deps += dependency('OpenCL')
+    deps += dependency('VkFFT')
+endif
 
 executable('esap', srcs, include_directories: incs, dependencies: deps)

@@ -6,6 +6,7 @@
 #include <getopt.h>
 #include <optional>
 #include <print>
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,6 +19,22 @@
 #include "esap/wav.hpp"
 
 using namespace esap;
+
+/** @brief Represents the format of the benchmark output. */
+enum class BenchFormat {
+
+    /**
+     * @brief Indicates that the benchmark output should be formatted as a
+     * pretty human-readable table.
+     */
+    TABLE,
+
+    /**
+     * @brief Indicates that the benchmark output should be formatted as JSON.
+     */
+    JSON
+
+};
 
 /** @brief Represents a phase of the audio pipeline to benchmark. */
 enum class Phase {
@@ -48,22 +65,28 @@ static constexpr std::string VERSION = "0.1.0";
 /** @brief The short command-line options. */
 static constexpr char SHORT_OPTS[] = ":bf:o:s:S:hv";
 
+/** @brief The identifier for the `--bench-format` command-line option. */
+static constexpr int OPT_BENCH_FORMAT = 256;
+
 /** @brief The identifier for the `--warmups` command-line option. */
-static constexpr int OPT_WARMUPS = 256;
+static constexpr int OPT_WARMUPS = 257;
 
 /** @brief The identifier for the `--iterations` command-line option. */
-static constexpr int OPT_ITERATIONS = 257;
+static constexpr int OPT_ITERATIONS = 258;
 
 /** @brief The identifier for the `--phase` command-line option. */
-static constexpr int OPT_PHASE = 258;
+static constexpr int OPT_PHASE = 259;
 
-#ifdef IMPL_OPENCL
+#ifdef ESAP_USE_OPENCL
     /** @brief The identifier for the `--list-devices` command-line option. */
-    static constexpr int OPT_LIST_DEVICES = 259;
+    static constexpr int OPT_LIST_DEVICES = 260;
 
     /** @brief The identifier for the `--device` command-line option. */
-    static constexpr int OPT_DEVICE = 260;
+    static constexpr int OPT_DEVICE = 261;
 #endif
+
+/** @brief The default benchmark output format. */
+static constexpr BenchFormat DEFAULT_BENCH_FORMAT = BenchFormat::TABLE;
 
 /** @brief The number of warmup iterations to perform before benchmarking. */
 static constexpr usize DEFAULT_WARMUPS = 10;
@@ -71,23 +94,51 @@ static constexpr usize DEFAULT_WARMUPS = 10;
 /** @brief The number of benchmark iterations to perform. */
 static constexpr usize DEFAULT_ITERATIONS = 100;
 
+/** @brief The default phase for benchmarking. */
+static constexpr Phase DEFAULT_PHASE = Phase::END_TO_END;
+
 /** @brief The long command-line options. */
 static constexpr Option LONG_OPTS[] = {
     { "benchmark", no_argument, nullptr, 'b' },
+    { "bench-format", required_argument, nullptr, OPT_BENCH_FORMAT },
     { "warmups", required_argument, nullptr, OPT_WARMUPS },
-    { "phase", required_argument, nullptr, OPT_PHASE },
     { "iterations", required_argument, nullptr, OPT_ITERATIONS },
+    { "phase", required_argument, nullptr, OPT_PHASE },
     { "filter", required_argument, nullptr, 'f' },
     { "output", required_argument, nullptr, 'o' },
     { "spectrum", required_argument, nullptr, 's' },
     { "spectrogram", required_argument, nullptr, 'S' },
-#ifdef IMPL_OPENCL
+#ifdef ESAP_USE_OPENCL
     { "list-devices", no_argument, nullptr, OPT_LIST_DEVICES },
     { "device", required_argument, nullptr, OPT_DEVICE },
 #endif
     { "help", no_argument, nullptr, 'h' },
     { "version", no_argument, nullptr, 'v' },
     { nullptr, 0, nullptr, 0 }
+};
+
+template<>
+struct std::formatter<BenchFormat> {
+
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    auto format(const BenchFormat& format, std::format_context& ctx) const {
+        std::string_view name;
+        switch (format) {
+            case BenchFormat::TABLE:
+                name = "table";
+                break;
+            case BenchFormat::JSON:
+                name = "json";
+                break;
+            default:
+                std::unreachable();
+        }
+        return std::format_to(ctx.out(), "{}", name);
+    }
+
 };
 
 template<>
@@ -141,6 +192,9 @@ struct Args {
     /** @brief Whether to benchmark the execution time. */
     bool benchmark;
 
+    /** @brief The format of the benchmark output (if specified). */
+    std::optional<BenchFormat> benchFormat;
+
     /**
      * @brief The number of warmup iterations to perform before benchmarking
      * (if specified).
@@ -156,9 +210,9 @@ struct Args {
     /** @brief The filters to apply (if specified). */
     std::vector<Filter> filters;
 
-#ifdef IMPL_OPENCL
-    /** @brief The index of the OpenCL device to use (if specified). */
-    std::optional<usize> deviceIdx;
+#ifdef ESAP_USE_OPENCL
+    /** @brief A pattern for selecting the OpenCL device (if specified). */
+    std::optional<std::string> device;
 #endif
 
     /**
@@ -190,6 +244,27 @@ struct Args {
                 case 'b':
                     args.benchmark = true;
                     break;
+                case OPT_BENCH_FORMAT: {
+                    std::string_view format = optarg;
+                    if (format == "table") {
+                        args.benchFormat = BenchFormat::TABLE;
+                    }
+                    else if (format == "json") {
+                        args.benchFormat = BenchFormat::JSON;
+                    }
+                    else {
+                        std::println(
+                            stderr,
+                            "{}: Invalid benchmark format '{}'.\n"
+                            "Try '{} --help' for more information.",
+                            args.program,
+                            optarg,
+                            args.program
+                        );
+                        std::exit(EXIT_FAILURE);
+                    }
+                    break;
+                }
                 case OPT_WARMUPS: {
                     usize warmups;
                     if (std::sscanf(optarg, "%zu", &warmups) != 1) {
@@ -311,19 +386,31 @@ struct Args {
                 case 'S':
                     args.spectrogram = optarg;
                     break;
-            #ifdef IMPL_OPENCL
+            #ifdef ESAP_USE_OPENCL
                 case OPT_LIST_DEVICES: {
                     std::vector<cl::Platform> platforms;
                     cl::Platform::get(&platforms);
-                    usize idx = 0;
-                    for (const cl::Platform& platform : platforms) {
+                    for (
+                        const auto& [platformIdx, platform]
+                            : std::views::enumerate(platforms)
+                    ) {
                         std::vector<cl::Device> devices;
                         platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
-                        for (const cl::Device& device : devices) {
+                        if (devices.empty()) {
+                            continue;
+                        }
+                        std::println(
+                            "Platform {}: {}",
+                            platformIdx,
+                            platform.getInfo<CL_PLATFORM_NAME>()
+                        );
+                        for (
+                            const auto& [deviceIdx, device]
+                                : std::views::enumerate(devices)
+                        ) {
                             std::println(
-                                "[{}] ({}) {}",
-                                idx++,
-                                platform.getInfo<CL_PLATFORM_NAME>(),
+                                "  Device {}: {}",
+                                deviceIdx,
                                 device.getInfo<CL_DEVICE_NAME>()
                             );
                         }
@@ -332,19 +419,7 @@ struct Args {
                     break;
                 }
                 case OPT_DEVICE: {
-                    usize deviceIdx;
-                    if (std::sscanf(optarg, "%zu", &deviceIdx) != 1) {
-                        std::println(
-                            stderr,
-                            "{}: Invalid OpenCL device index '{}'.\n"
-                            "Try '{} --help' for more information.",
-                            args.program,
-                            optarg,
-                            args.program
-                        );
-                        std::exit(EXIT_FAILURE);
-                    }
-                    args.deviceIdx = deviceIdx;
+                    args.device = optarg;
                     break;
                 }
             #endif
@@ -354,35 +429,41 @@ struct Args {
                         "Process the waveform audio file FILE.\n"
                         "\n"
                         "Options:\n"
-                        "  -b, --benchmark         Benchmark the execution time (excluding I/O).\n"
-                        "      --warmups=N         Perform N warmup iterations before benchmarking (default: {}).\n"
-                        "      --iterations=N      Perform N benchmark iterations (default: {}).\n"
-                        "      --phase=PHASE       Benchmark only the specified phase of the audio pipeline.\n"
-                        "                          PHASE can be one of the following:\n"
-                        "                            end-to-end (default)\n"
-                        "                            forward-only\n"
-                        "                            inverse-only\n"
-                        "                            filter-only\n"
-                        "  -f, --filter=SPEC       Apply the specified filter.\n"
-                        "                          SPEC can be one of the following:\n"
-                        "                            lowpass:FREQ\n"
-                        "                            highpass:FREQ\n"
-                        "                            bandpass:FREQ_LOW:FREQ_HIGH\n"
-                        "                            bandstop:FREQ_LOW:FREQ_HIGH\n"
-                        "                          FREQ, FREQ_LOW and FREQ_HIGH are cutoff frequencies in Hz.\n"
-                        "                          Zero or more filters can be specified, which are applied in the given order.\n"
-                        "  -o, --output=FILE       Write the processed audio to FILE.\n"
-                        "  -s, --spectrum=FILE     Write the spectrum of the processed audio to FILE in CSV format.\n"
-                        "  -S, --spectrogram=FILE  Write the spectrogram of the processed audio to FILE in CSV format.\n"
-                    #ifdef IMPL_OPENCL
-                        "      --list-devices      List available OpenCL devices and exit.\n"
-                        "      --device=IDX        Use the OpenCL device with index IDX (as listed by --list-devices).\n"
+                        "  -b, --benchmark                  Benchmark the execution time (excluding I/O).\n"
+                        "      --bench-format={{table|json}}  Select the format of the benchmark output (default: {}).\n"
+                        "      --warmups=N                  Perform N warmup iterations before benchmarking (default: {}).\n"
+                        "      --iterations=N               Perform N benchmark iterations (default: {}).\n"
+                        "      --phase=PHASE                Benchmark only the specified phase of the audio pipeline (default: {}).\n"
+                        "                                   PHASE can be one of the following:\n"
+                        "                                     end-to-end\n"
+                        "                                     forward-only\n"
+                        "                                     inverse-only\n"
+                        "                                     filter-only\n"
+                        "  -f, --filter=SPEC                Apply the specified filter.\n"
+                        "                                   SPEC can be one of the following:\n"
+                        "                                     lowpass:FREQ\n"
+                        "                                     highpass:FREQ\n"
+                        "                                     bandpass:FREQ_LOW:FREQ_HIGH\n"
+                        "                                     bandstop:FREQ_LOW:FREQ_HIGH\n"
+                        "                                   FREQ, FREQ_LOW and FREQ_HIGH are cutoff frequencies in Hz.\n"
+                        "                                   Zero or more filters can be specified, which are applied in the given order.\n"
+                        "  -o, --output=FILE                Write the processed audio to FILE.\n"
+                        "  -s, --spectrum=FILE              Write the spectrum of the processed audio to FILE in CSV format.\n"
+                        "  -S, --spectrogram=FILE           Write the spectrogram of the processed audio to FILE in CSV format.\n"
+                    #ifdef ESAP_USE_OPENCL
+                        "      --list-devices               List available OpenCL devices and exit.\n"
+                        "      --device=PATTERN             Select the OpenCL device using PATTERN (case-insensitive).\n"
+                        "                                   The PATTERN is searched for in the devices (as listed by --list-devices)\n"
+                        "                                   and must uniquely identify a device. If no pattern is provided, the first\n"
+                        "                                   available device is used.\n"
                     #endif
-                        "  -h, --help              Display this help and exit.\n"
-                        "  -v, --version           Display version information and exit.",
+                        "  -h, --help                       Display this help and exit.\n"
+                        "  -v, --version                    Display version information and exit.",
                         args.program,
+                        DEFAULT_BENCH_FORMAT,
                         DEFAULT_WARMUPS,
-                        DEFAULT_ITERATIONS
+                        DEFAULT_ITERATIONS,
+                        DEFAULT_PHASE
                     );
                     std::exit(EXIT_SUCCESS);
                     break;
@@ -432,187 +513,272 @@ struct Args {
 
 };
 
-int main(int argc, char** argv) {
-    Args args = Args::parse(argc, argv);
-    try {
-    #ifdef IMPL_OPENCL
-        std::shared_ptr<GpuContext> gpuContext = GpuContext::create(
-            args.deviceIdx.value_or(0)
-        );
-    #endif
-        Wav input = Wav::read(args.input);
-        if (args.benchmark) {
-            usize warmups = args.warmups.value_or(DEFAULT_WARMUPS);
-            usize iterations = args.iterations.value_or(DEFAULT_ITERATIONS);
-            BenchResult result;
-            Phase phase = args.phase.value_or(Phase::END_TO_END);
-            switch (phase) {
-                case Phase::END_TO_END:
-                    result = benchmark(
-                        warmups,
-                        iterations,
-                        [&]() {
-                            Stft stft = Stft::forward(
-                                input.format(),
-                                input.samples()
-                            #ifdef IMPL_OPENCL
-                                , gpuContext
-                            #endif
-                            );
-                            if (!args.filters.empty()) {
-                                stft.apply(args.filters);
-                            }
-                            return stft.inverse();
-                        }
-                    );
-                    break;
-                case Phase::FORWARD_ONLY:
-                    result = benchmark(
-                        warmups,
-                        iterations,
-                        [&]() {
-                            return Stft::forward(
-                                input.format(),
-                                input.samples()
-                            #ifdef IMPL_OPENCL
-                                , gpuContext
-                            #endif
-                            );
-                        }
-                    );
-                    break;
-                case Phase::INVERSE_ONLY: {
+/**
+ * @brief Runs a benchmark for the audio processing pipeline.
+ *
+ * @param[in]      args       The command-line arguments.
+ * @param[in]      input      The input waveform audio file.
+ * @param[in, out] gpuContext A GPU context that may be used to accelerate the
+ *                            computation.
+ */
+static void run_benchmark(
+    const Args& args,
+    const Wav& input
+#ifdef ESAP_USE_OPENCL
+    , GpuContext& gpuContext
+#endif
+) {
+    usize warmups = args.warmups.value_or(DEFAULT_WARMUPS);
+    usize iterations = args.iterations.value_or(DEFAULT_ITERATIONS);
+    BenchResult result;
+    Phase phase = args.phase.value_or(DEFAULT_PHASE);
+    switch (phase) {
+        case Phase::END_TO_END:
+            result = benchmark(
+                warmups,
+                iterations,
+                [&]() {
                     Stft stft = Stft::forward(
                         input.format(),
                         input.samples()
-                    #ifdef IMPL_OPENCL
-                        , gpuContext
+                    #ifdef ESAP_USE_OPENCL
+                        , &gpuContext
                     #endif
                     );
                     if (!args.filters.empty()) {
                         stft.apply(args.filters);
                     }
-                    result = benchmark(
-                        warmups,
-                        iterations,
-                        [&]() { return stft.inverse(); }
-                    );
-                    break;
+                    return stft.inverse();
                 }
-                case Phase::FILTER_ONLY: {
-                    Stft stft = Stft::forward(
-                        input.format(),
-                        input.samples()
-                    #ifdef IMPL_OPENCL
-                        , gpuContext
-                    #endif
-                    );
-                    result = benchmark(
-                        warmups,
-                        iterations,
-                        [&]() {
-                            if (!args.filters.empty()) {
-                                stft.apply(args.filters);
-                            }
-                        }
-                    );
-                    break;
-                }
-                default:
-                    std::unreachable();
-            }
-            auto ms = [](std::chrono::nanoseconds ns) {
-                return static_cast<f64>(ns.count()) / 1'000'000.0;
-            };
-            std::println(
-                "Benchmark ({} warmups, {} iterations, {}):",
+            );
+            break;
+        case Phase::FORWARD_ONLY:
+            result = benchmark(
                 warmups,
                 iterations,
-                phase
+                [&]() {
+                    return Stft::forward(
+                        input.format(),
+                        input.samples()
+                    #ifdef ESAP_USE_OPENCL
+                        , &gpuContext
+                    #endif
+                    );
+                }
             );
-            std::println(
-                "┌──────┬─────────────┬─────────────┬─────────────┬────────────"
-                    "─┬─────────────┐"
+            break;
+        case Phase::INVERSE_ONLY: {
+            Stft stft = Stft::forward(
+                input.format(),
+                input.samples()
+            #ifdef ESAP_USE_OPENCL
+                , &gpuContext
+            #endif
             );
-            std::println(
-                "│      │ {:^11} │ {:^11} │ {:^11} │ {:^11} │ {:^11} │",
-                "Min",
-                "Max",
-                "Mean",
-                "Median",
-                "StdDev"
+            if (!args.filters.empty()) {
+                stft.apply(args.filters);
+            }
+            result = benchmark(
+                warmups,
+                iterations,
+                [&]() { return stft.inverse(); }
             );
-            std::println(
-                "├──────┼─────────────┼─────────────┼─────────────┼────────────"
-                    "─┼─────────────┤"
+            break;
+        }
+        case Phase::FILTER_ONLY: {
+            Stft stft = Stft::forward(
+                input.format(),
+                input.samples()
+            #ifdef ESAP_USE_OPENCL
+                , &gpuContext
+            #endif
             );
-            std::println(
-                "│ {:<4} │ {:>8.3F} ms │ {:>8.3F} ms │" " {:>8.3F} ms │ "
-                    "{:>8.3F} ms │ {:>8.3F} ms │",
-                "Wall",
-                ms(result.wall.min),
-                ms(result.wall.max),
-                ms(result.wall.mean),
-                ms(result.wall.median),
-                ms(result.wall.stdDev)
+            result = benchmark(
+                warmups,
+                iterations,
+                [&]() {
+                    if (!args.filters.empty()) {
+                        stft.apply(args.filters);
+                    }
+                }
             );
-            std::println(
-                "├──────┼─────────────┼─────────────┼─────────────┼────────────"
-                    "─┼─────────────┤"
-            );
-            std::println(
-                "│ {:<4} │ {:>8.3F} ms │ {:>8.3F} ms │" " {:>8.3F} ms │ "
-                    "{:>8.3F} ms │ {:>8.3F} ms │",
-                "CPU",
-                ms(result.cpu.min),
-                ms(result.cpu.max),
-                ms(result.cpu.mean),
-                ms(result.cpu.median),
-                ms(result.cpu.stdDev)
-            );
-            std::println(
-                "└──────┴─────────────┴─────────────┴─────────────┴────────────"
-                    "─┴─────────────┘"
+            break;
+        }
+        default:
+            std::unreachable();
+    }
+    auto ms = [](std::chrono::nanoseconds ns) {
+        return static_cast<f64>(ns.count()) / 1'000'000.0;
+    };
+    BenchFormat benchFormat = args.benchFormat.value_or(DEFAULT_BENCH_FORMAT);
+    if (benchFormat == BenchFormat::TABLE) {
+        std::println(
+            "Benchmark ({} warmups, {} iterations, {}):",
+            warmups,
+            iterations,
+            phase
+        );
+        std::println(
+            "┌──────┬─────────────┬─────────────┬─────────────┬────────────"
+                "─┬─────────────┐"
+        );
+        std::println(
+            "│      │ {:^11} │ {:^11} │ {:^11} │ {:^11} │ {:^11} │",
+            "Min",
+            "Max",
+            "Mean",
+            "Median",
+            "StdDev"
+        );
+        std::println(
+            "├──────┼─────────────┼─────────────┼─────────────┼────────────"
+                "─┼─────────────┤"
+        );
+        std::println(
+            "│ {:<4} │ {:>8.3F} ms │ {:>8.3F} ms │" " {:>8.3F} ms │ "
+                "{:>8.3F} ms │ {:>8.3F} ms │",
+            "Wall",
+            ms(result.wall.min),
+            ms(result.wall.max),
+            ms(result.wall.mean),
+            ms(result.wall.median),
+            ms(result.wall.stdDev)
+        );
+        std::println(
+            "├──────┼─────────────┼─────────────┼─────────────┼────────────"
+                "─┼─────────────┤"
+        );
+        std::println(
+            "│ {:<4} │ {:>8.3F} ms │ {:>8.3F} ms │" " {:>8.3F} ms │ "
+                "{:>8.3F} ms │ {:>8.3F} ms │",
+            "CPU",
+            ms(result.cpu.min),
+            ms(result.cpu.max),
+            ms(result.cpu.mean),
+            ms(result.cpu.median),
+            ms(result.cpu.stdDev)
+        );
+        std::println(
+            "└──────┴─────────────┴─────────────┴─────────────┴────────────"
+                "─┴─────────────┘"
+        );
+    }
+    else {
+        std::println(
+            "{{\n"
+            "    \"warmups\": {},\n"
+            "    \"iterations\": {},\n"
+            "    \"phase\": \"{}\",\n"
+            "    \"wall\": {{\n"
+            "        \"min_ms\": {},\n"
+            "        \"max_ms\": {},\n"
+            "        \"mean_ms\": {},\n"
+            "        \"median_ms\": {},\n"
+            "        \"stdDev_ms\": {}\n"
+            "    }},\n"
+            "    \"cpu\": {{\n"
+            "        \"min_ms\": {},\n"
+            "        \"max_ms\": {},\n"
+            "        \"mean_ms\": {},\n"
+            "        \"median_ms\": {},\n"
+            "        \"stdDev_ms\": {}\n"
+            "    }}\n"
+            "}}",
+            warmups,
+            iterations,
+            phase,
+            ms(result.wall.min),
+            ms(result.wall.max),
+            ms(result.wall.mean),
+            ms(result.wall.median),
+            ms(result.wall.stdDev),
+            ms(result.cpu.min),
+            ms(result.cpu.max),
+            ms(result.cpu.mean),
+            ms(result.cpu.median),
+            ms(result.cpu.stdDev)
+        );
+    }
+}
+
+/**
+ * @brief Runs the regular audio processing pipeline.
+ *
+ * @param[in]      args       The command-line arguments.
+ * @param[in]      input      The input waveform audio file.
+ * @param[in, out] gpuContext A GPU context that may be used to accelerate the
+ *                            computation.
+ */
+static void run_pipeline(
+    const Args& args,
+    const Wav& input
+#ifdef ESAP_USE_OPENCL
+    , GpuContext& gpuContext
+#endif
+) {
+    Stft stft = Stft::forward(
+        input.format(),
+        input.samples()
+    #ifdef ESAP_USE_OPENCL
+        , &gpuContext
+    #endif
+    );
+    if (!args.filters.empty()) {
+        stft.apply(args.filters);
+    }
+    if (args.output) {
+        Wav output(stft.format(), stft.inverse());
+        output.write(*args.output);
+    }
+    if (args.spectrum) {
+        const AudioFormat& format = stft.format();
+        esap::export_spectrum(
+            format.numChannels,
+            format.sampleRate,
+            stft.num_frames(),
+            Stft::WINDOW_SIZE,
+            stft.bins(),
+            *args.spectrum
+        );
+    }
+    if (args.spectrogram) {
+        const AudioFormat& format = stft.format();
+        esap::export_spectrogram(
+            format.numChannels,
+            format.sampleRate,
+            stft.num_frames(),
+            Stft::WINDOW_SIZE,
+            Stft::HOP_SIZE,
+            stft.bins(),
+            *args.spectrogram
+        );
+    }
+}
+
+int main(int argc, char** argv) {
+    Args args;
+    try {
+        args = Args::parse(argc, argv);
+        Wav input = Wav::read(args.input);
+    #ifdef ESAP_USE_OPENCL
+        GpuContext gpuContext = GpuContext::create(args.device);
+    #endif
+        if (args.benchmark) {
+            run_benchmark(
+                args,
+                input
+            #ifdef ESAP_USE_OPENCL
+                , gpuContext
+            #endif
             );
         }
-        Stft stft = Stft::forward(
-            input.format(),
-            input.samples()
-        #ifdef IMPL_OPENCL
+        run_pipeline(
+            args,
+            input
+        #ifdef ESAP_USE_OPENCL
             , gpuContext
         #endif
         );
-        if (!args.filters.empty()) {
-            stft.apply(args.filters);
-        }
-        if (args.output) {
-            auto [format, samples] = stft.inverse();
-            Wav output(format, std::move(samples));
-            output.write(*args.output);
-        }
-        if (args.spectrum) {
-            AudioFormat format = stft.format();
-            esap::export_spectrum(
-                format.numChannels,
-                format.sampleRate,
-                stft.num_frames(),
-                Stft::WINDOW_SIZE,
-                stft.bins(),
-                *args.spectrum
-            );
-        }
-        if (args.spectrogram) {
-            AudioFormat format = stft.format();
-            esap::export_spectrogram(
-                format.numChannels,
-                format.sampleRate,
-                stft.num_frames(),
-                Stft::WINDOW_SIZE,
-                Stft::HOP_SIZE,
-                stft.bins(),
-                *args.spectrogram
-            );
-        }
         return EXIT_SUCCESS;
     }
     catch (const std::exception& e) {
