@@ -32,7 +32,6 @@ AllowShortLoopsOnASingleLine: true
 AllowShortNamespacesOnASingleLine: false
 AllowShortRecordOnASingleLine: Empty
 AlwaysBreakBeforeMultilineStrings: false
-AttributeMacros: []
 BinPackLongBracedList: false
 BitFieldColonSpacing: Both
 BraceWrapping:
@@ -105,8 +104,7 @@ IndentCaseBlocks: false
 IndentCaseLabels: true
 IndentExportBlock: true
 IndentExternBlock: Indent
-# IndentGotoLabels: OuterIndent
-IndentGotoLabels: true
+IndentGotoLabels: OuterIndent
 IndentPPDirectives: BeforeHash
 IndentRequiresClause: false
 IndentWidth: 4
