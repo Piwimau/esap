@@ -105,7 +105,8 @@ IndentCaseBlocks: false
 IndentCaseLabels: true
 IndentExportBlock: true
 IndentExternBlock: Indent
-IndentGotoLabels: OuterIndent
+# IndentGotoLabels: OuterIndent
+IndentGotoLabels: true
 IndentPPDirectives: BeforeHash
 IndentRequiresClause: false
 IndentWidth: 4
@@ -143,24 +144,24 @@ PenaltyReturnTypeOnItsOwnLine: 1000
 PointerAlignment: Left
 QualifierAlignment: Custom
 QualifierOrder:
-  - typedef
+  # - typedef
   - friend
   - static
-  - extern
-  - thread_local
+  # - extern
+  # - thread_local
   - constexpr
-  - consteval
-  - constinit
-  - explicit
-  - mutable
+  # - consteval
+  # - constinit
+  # - explicit
+  # - mutable
   - inline
   - const
   - volatile
   - restrict
-  - signed
-  - unsigned
-  - short
-  - long
+  # - signed
+  # - unsigned
+  # - short
+  # - long
   - type
 ReferenceAlignment: Left
 ReflowComments: Always
