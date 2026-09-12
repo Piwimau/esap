@@ -1,22 +1,22 @@
 AccessModifierOffset: -4
-AlignAfterOpenBracket: BlockIndent
+AlignAfterOpenBracket: true
 AlignArrayOfStructures: None
 AlignConsecutiveAssignments: None
 AlignConsecutiveBitFields: None
 AlignConsecutiveDeclarations: None
 AlignConsecutiveMacros: None
 AlignConsecutiveShortCaseStatements:
-    Enabled: false
-    AcrossEmptyLines: false
-    AcrossComments: false
-    AlignCaseArrows: false
-    AlignCaseColons: false
+  Enabled: false
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCaseArrows: false
+  AlignCaseColons: false
 AlignEscapedNewlines: LeftWithLastLine
 AlignOperands: DontAlign
 AlignTrailingComments:
-    Kind: Leave
-    OverEmptyLines: 0
-    AlignPPAndNotPP: false
+  Kind: Leave
+  OverEmptyLines: 0
+  AlignPPAndNotPP: false
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowBreakBeforeNoexceptSpecifier: Always
@@ -24,7 +24,7 @@ AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseExpressionOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortCompoundRequirementOnASingleLine: true
-AllowShortEnumsOnASingleLine: false
+AllowShortEnumsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLambdasOnASingleLine: All
@@ -33,27 +33,28 @@ AllowShortNamespacesOnASingleLine: false
 AllowShortRecordOnASingleLine: Empty
 AlwaysBreakBeforeMultilineStrings: false
 AttributeMacros: []
-BinPackArguments: false
 BinPackLongBracedList: false
-BinPackParameters: OnePerLine
 BitFieldColonSpacing: Both
 BraceWrapping:
-    AfterCaseLabel: false
-    AfterClass: false
-    AfterControlStatement: Never
-    AfterFunction: false
-    AfterNamespace: false
-    AfterStruct: false
-    AfterUnion: false
-    AfterExternBlock: false
-    BeforeCatch: true
-    BeforeElse: true
-    BeforeLambdaBody: false
-    BeforeWhile: true
-    IndentBraces: false
-    SplitEmptyFunction: false
-    SplitEmptyRecord: false
-    SplitEmptyNamespace: false
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterRequiresExpression: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExportBlock: false
+  AfterExternBlock: false
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: false
+  BeforeWhile: true
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
 BracedInitializerIndentWidth: 4
 BreakAdjacentStringLiterals: false
 BreakAfterAttributes: Leave
@@ -86,7 +87,7 @@ ColumnLimit: 80
 CompactNamespaces: false
 ConstructorInitializerIndentWidth: 4
 ContinuationIndentWidth: 4
-Cpp11BracedListStyle: true
+Cpp11BracedListStyle: Block
 DerivePointerAlignment: false
 DisableFormat: false
 EmptyLineAfterAccessModifier: Leave
@@ -104,7 +105,7 @@ IndentCaseBlocks: false
 IndentCaseLabels: true
 IndentExportBlock: true
 IndentExternBlock: Indent
-IndentGotoLabels: true
+IndentGotoLabels: OuterIndent
 IndentPPDirectives: BeforeHash
 IndentRequiresClause: false
 IndentWidth: 4
@@ -112,31 +113,55 @@ IndentWrappedFunctionNames: false
 InsertBraces: false
 InsertNewlineAtEOF: false
 IntegerLiteralSeparator:
-    Binary: 0
-    Decimal: 0
-    Hex: 0
+  Binary: 0
+  Decimal: 0
+  Hex: 0
 KeepEmptyLines:
-    AtEndOfFile: false
-    AtStartOfBlock: true
-    AtStartOfFile: false
+  AtEndOfFile: false
+  AtStartOfBlock: true
+  AtStartOfFile: false
 KeepFormFeed: true
 LambdaBodyIndentation: Signature
-LineEnding: DeriveCRLF
+LineEnding: DeriveLF
 MainIncludeChar: Any
+MaxEmptyLinesToKeep: 1
 NamespaceIndentation: Inner
 NumericLiteralCase:
-    ExponentLetter: Upper
-    HexDigit: Upper
-    Prefix: Lower
-    Suffix: Upper
+  ExponentLetter: Upper
+  HexDigit: Upper
+  Prefix: Lower
+  Suffix: Upper
 PPIndentWidth: 4
+PackArguments:
+  BinPack: OnePerLine
 PackConstructorInitializers: CurrentLine
+PackParameters:
+  BinPack: OnePerLine
 PenaltyBreakAssignment: 1000
 PenaltyBreakBeforeMemberAccess: 1000
 PenaltyReturnTypeOnItsOwnLine: 1000
 PointerAlignment: Left
 QualifierAlignment: Custom
-QualifierOrder: [friend, static, constexpr, inline, const, volatile, restrict, type]
+QualifierOrder:
+  - typedef
+  - friend
+  - static
+  - extern
+  - thread_local
+  - constexpr
+  - consteval
+  - constinit
+  - explicit
+  - mutable
+  - inline
+  - const
+  - volatile
+  - restrict
+  - signed
+  - unsigned
+  - short
+  - long
+  - type
 ReferenceAlignment: Left
 ReflowComments: Always
 RemoveBracesLLVM: false
@@ -148,7 +173,12 @@ RequiresExpressionIndentation: OuterScope
 SeparateDefinitionBlocks: Leave
 ShortNamespaceLines: 1
 SkipMacroDefinitionBody: false
-SortIncludes: true
+SortIncludes:
+  Enabled: true
+  IgnoreCase: false
+  IgnoreExtension: true
+  Natural: true
+  FilesBeforeFolders: false
 SortUsingDeclarations: Lexicographic
 SpaceAfterCStyleCast: true
 SpaceAfterLogicalNot: false
@@ -157,33 +187,32 @@ SpaceAfterTemplateKeyword: false
 SpaceAroundPointerQualifiers: Default
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeCaseColon: false
-SpaceBeforeCpp11BracedList: false
+SpaceBeforeCpp11BracedList: true
 SpaceBeforeCtorInitializerColon: true
 SpaceBeforeEnumUnderlyingTypeColon: true
 SpaceBeforeInheritanceColon: true
 SpaceBeforeParens: Custom
 SpaceBeforeParensOptions:
-    AfterControlStatements: true
-    AfterForeachMacros: false
-    AfterFunctionDeclarationName: false
-    AfterFunctionDefinitionName: false
-    AfterIfMacros: false
-    AfterNot: true
-    AfterOverloadedOperator: false
-    AfterPlacementOperator: false
-    AfterRequiresInClause: true
-    AfterRequiresInExpression: true
-    BeforeNonEmptyParentheses: false
+  AfterControlStatements: true
+  AfterForeachMacros: false
+  AfterFunctionDeclarationName: false
+  AfterFunctionDefinitionName: false
+  AfterIfMacros: false
+  AfterNot: true
+  AfterOverloadedOperator: false
+  AfterPlacementOperator: false
+  AfterRequiresInClause: true
+  AfterRequiresInExpression: true
+  BeforeNonEmptyParentheses: false
 SpaceBeforeRangeBasedForLoopColon: true
 SpaceBeforeSquareBrackets: false
-SpaceInEmptyBlock: true
 SpaceInEmptyBraces: Always
 SpacesBeforeTrailingComments: 1
 SpacesInAngles: Never
 SpacesInBlockComments: Always
 SpacesInLineCommentPrefix:
-    Minimum: 1
-    Maximum: -1
+  Minimum: 1
+  Maximum: -1
 SpacesInParens: Never
 SpacesInSquareBrackets: false
 Standard: Auto
