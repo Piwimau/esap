@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <fftw3.h>
 #include <type_traits>
-#include "esap/func-deleter.hpp"
 #include "esap/stft.hpp"
 
 namespace esap {
@@ -9,10 +8,39 @@ namespace esap {
 struct Stft::Impl {
 
     /** @brief Represents a custom deleter for memory allocated by FFTW. */
-    using FftwFreeDeleter = FuncDeleter<&fftwf_free>;
+    struct FftwFreeDeleter {
+
+        /**
+         * @brief Frees memory allocated by FFTW.
+         *
+         * @warning The behavior is undefined if `ptr` is a `nullptr`, or if it
+         * has already been freed. Note that this function assumes that `ptr`
+         * was obtained from `fftwf_alloc_real()` or `fftwf_alloc_complex()`.
+         *
+         * @param[in, out] ptr The pointer to the memory to free.
+         */
+        void operator()(void* ptr) const noexcept {
+            fftwf_free(ptr);
+        }
+
+    };
 
     /** @brief Represents a custom deleter for FFTW plans. */
-    using FftwPlanDeleter = FuncDeleter<&fftwf_destroy_plan>;
+    struct FftwPlanDeleter {
+
+        /**
+         * @brief Destroys an FFTW plan.
+         *
+         * @warning The behavior is undefined if `plan` is a `nullptr`, or if it
+         * has already been destroyed.
+         *
+         * @param[in, out] plan The FFTW plan to destroy.
+         */
+        void operator()(fftwf_plan plan) const noexcept {
+            fftwf_destroy_plan(plan);
+        }
+
+    };
 
     /** @brief The precomputed coefficients of a Hann window. */
     static constexpr std::array<f32, Stft::WINDOW_SIZE> WINDOW = make_window();
@@ -31,7 +59,7 @@ struct Stft::Impl {
      * corresponds to the frame, and the third dimension corresponds to the bin
      * (between `0` and `Stft::HALF_WINDOW_SIZE`, inclusively).
      */
-    std::unique_ptr<std::complex<f32>[]> _bins;
+    std::vector<std::complex<f32>> _bins;
 
     static std::unique_ptr<Impl> forward(
         const AudioFormat& format,
@@ -39,7 +67,7 @@ struct Stft::Impl {
     ) {
         usize numFrames = (format.numFrames + Stft::HOP_SIZE - 1)
             / Stft::HOP_SIZE;
-        auto bins = std::make_unique_for_overwrite<std::complex<f32>[]>(
+        std::vector<std::complex<f32>> bins(
             format.numChannels * numFrames * Stft::NUM_BINS
         );
         std::unique_ptr<f32[], FftwFreeDeleter> input(
@@ -70,7 +98,7 @@ struct Stft::Impl {
                 std::ranges::copy_n(
                     output.get(),
                     Stft::NUM_BINS,
-                    bins.get() + (c * numFrames + f) * Stft::NUM_BINS
+                    bins.data() + (c * numFrames + f) * Stft::NUM_BINS
                 );
             }
         }
@@ -102,14 +130,11 @@ struct Stft::Impl {
     }
 
     std::span<const std::complex<f32>> bins() {
-        return std::span<const std::complex<f32>>(
-            _bins.get(),
-            _format.numChannels * _numFrames * Stft::NUM_BINS
-        );
+        return std::span<const std::complex<f32>>(_bins);
     }
 
-    std::unique_ptr<f32[]> inverse() const {
-        auto frames = std::make_unique_for_overwrite<f32[]>(
+    std::vector<f32> inverse() const {
+        std::vector<f32> frames(
             static_cast<usize>(_format.numChannels) * _numFrames
                 * Stft::WINDOW_SIZE
         );
@@ -132,7 +157,7 @@ struct Stft::Impl {
         for (usize c = 0; c < _format.numChannels; c++) {
             for (usize f = 0; f < _numFrames; f++) {
                 std::ranges::copy_n(
-                    _bins.get() + (c * _numFrames + f) * Stft::NUM_BINS,
+                    _bins.data() + (c * _numFrames + f) * Stft::NUM_BINS,
                     Stft::NUM_BINS,
                     input.get()
                 );
@@ -143,7 +168,7 @@ struct Stft::Impl {
                 }
             }
         }
-        auto samples = std::make_unique<f32[]>(
+        std::vector<f32> samples(
             static_cast<usize>(_format.numChannels) * _format.numFrames
         );
         for (usize c = 0; c < _format.numChannels; c++) {
@@ -198,7 +223,7 @@ std::span<const std::complex<f32>> Stft::bins() {
     return _impl->bins();
 }
 
-std::unique_ptr<f32[]> Stft::inverse() const {
+std::vector<f32> Stft::inverse() const {
     return _impl->inverse();
 }
 

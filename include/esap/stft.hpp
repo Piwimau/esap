@@ -7,6 +7,7 @@
 #include <memory>
 #include <numbers>
 #include <span>
+#include <vector>
 #include "esap/audio-format.hpp"
 #include "esap/filter.hpp"
 #ifdef ESAP_USE_OPENCL
@@ -115,7 +116,7 @@ public:
      *
      * @return The reconstructed time-domain audio samples.
      */
-    std::unique_ptr<f32[]> inverse() const;
+    std::vector<f32> inverse() const;
 
     ~Stft() noexcept;
 
@@ -154,8 +155,7 @@ constexpr std::array<f32, Stft::NUM_BINS> make_gains(
     std::ranges::fill_n(gains.begin(), Stft::NUM_BINS, 1.0F);
     for (const Filter& filter : filters) {
         std::visit(
-            [&](const auto& f) {
-                using T = std::decay_t<decltype(f)>;
+            [&]<typename T>(const T& f) {
                 for (usize i = 0; i < Stft::NUM_BINS; i++) {
                     f32 freq = static_cast<f32>(i)
                         * static_cast<f32>(format.sampleRate)

@@ -1,9 +1,9 @@
 #ifndef ESAP_WAV_HPP
 #define ESAP_WAV_HPP
 
-#include <memory>
 #include <span>
 #include <string>
+#include <vector>
 #include "esap/audio-format.hpp"
 #include "esap/types.hpp"
 
@@ -21,7 +21,7 @@ private:
      * stored in a planar layout (i.e., all samples of an audio channel are
      * stored contiguously in memory).
      */
-    std::unique_ptr<f32[]> _samples;
+    std::vector<f32> _samples;
 
 public:
 
@@ -35,7 +35,7 @@ public:
      *                    (i.e., all samples of an audio channel are stored
      *                    contiguously in memory).
      */
-    Wav(AudioFormat format, std::unique_ptr<f32[]> samples);
+    Wav(AudioFormat format, std::vector<f32> samples);
 
     /**
      * @brief Reads a waveform audio file from a specified path.

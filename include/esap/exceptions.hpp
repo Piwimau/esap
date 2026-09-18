@@ -10,19 +10,7 @@ namespace esap {
 class Exception : public std::runtime_error {
 public:
 
-    /**
-     * @brief Initializes a new `Exception` with a specified error message.
-     *
-     * @param[in] msg The error message describing the exception.
-     */
-    explicit Exception(const std::string& msg) : std::runtime_error(msg) { }
-
-    /**
-     * @brief Initializes a new `Exception` with a specified error message.
-     *
-     * @param[in] msg The error message describing the exception.
-     */
-    explicit Exception(const char* msg) : std::runtime_error(msg) { }
+    using runtime_error::runtime_error;
 
 };
 
@@ -33,21 +21,7 @@ public:
 class InvalidWav : public Exception {
 public:
 
-    /**
-     * @brief Initializes a new `InvalidWav` exception with a specified error
-     * message.
-     *
-     * @param[in] msg The error message describing the exception.
-     */
-    explicit InvalidWav(const std::string& msg) : Exception(msg) { }
-
-    /**
-     * @brief Initializes a new `InvalidWav` exception with a specified error
-     * message.
-     *
-     * @param[in] msg The error message describing the exception.
-     */
-    explicit InvalidWav(const char* msg) : Exception(msg) { }
+    using Exception::Exception;
 
 };
 
@@ -58,21 +32,7 @@ public:
 class UnsupportedWav : public Exception {
 public:
 
-    /**
-     * @brief Initializes a new `UnsupportedWav` exception with a specified
-     * error message.
-     *
-     * @param[in] msg The error message describing the exception.
-     */
-    explicit UnsupportedWav(const std::string& msg) : Exception(msg) { }
-
-    /**
-     * @brief Initializes a new `UnsupportedWav` exception with a specified
-     * error message.
-     *
-     * @param[in] msg The error message describing the exception.
-     */
-    explicit UnsupportedWav(const char* msg) : Exception(msg) { }
+    using Exception::Exception;
 
 };
 

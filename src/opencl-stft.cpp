@@ -41,10 +41,13 @@ struct Stft::Impl {
      * corresponds to the frame, and the third dimension corresponds to the bin
      * (between `0` and `Stft::HALF_WINDOW_SIZE`, inclusively).
      */
-    std::unique_ptr<std::complex<f32>[]> _bins;
+    std::vector<std::complex<f32>> _bins;
 
     /** @brief The GPU-side buffer containing the complex frequency bins. */
     cl::Buffer _gpuBins;
+
+    /** @brief Indicates whether the bins are currently stored on the host. */
+    bool _binsOnHost = false;
 
     static std::unique_ptr<Impl> forward(
         const AudioFormat& format,
@@ -52,7 +55,7 @@ struct Stft::Impl {
         GpuContext* gpuContext
     ) {
         assert(gpuContext != nullptr);
-        std::unique_ptr<std::complex<f32>[]> bins;
+        std::vector<std::complex<f32>> bins;
         cl::Buffer gpuSamples(
             gpuContext->context,
             CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
@@ -179,30 +182,26 @@ struct Stft::Impl {
             cl::NDRange(1, NUM_WORKERS)
         );
         _gpuContext->queue.finish();
-        _bins = nullptr;
+        _binsOnHost = false;
     }
 
     std::span<const std::complex<f32>> bins() {
-        if (_bins == nullptr) {
-            _bins = std::make_unique_for_overwrite<std::complex<f32>[]>(
-                _format.numChannels * _numFrames * Stft::NUM_BINS
-            );
+        if (!_binsOnHost) {
+            _bins.resize(_format.numChannels * _numFrames * Stft::NUM_BINS);
             _gpuContext->queue.enqueueReadBuffer(
                 _gpuBins,
                 CL_TRUE,
                 0,
                 _format.numChannels * _numFrames * Stft::NUM_BINS
                     * sizeof(std::complex<f32>),
-                _bins.get()
+                _bins.data()
             );
+            _binsOnHost = true;
         }
-        return std::span<const std::complex<f32>>(
-            _bins.get(),
-            _format.numChannels * _numFrames * Stft::NUM_BINS
-        );
+        return std::span<const std::complex<f32>>(_bins);
     }
 
-    std::unique_ptr<f32[]> inverse() const {
+    std::vector<f32> inverse() const {
         usize numFrames = (_format.numFrames + Stft::HOP_SIZE - 1)
             / Stft::HOP_SIZE;
         usize gpuInputBufferSize = _format.numChannels * numFrames
@@ -259,7 +258,7 @@ struct Stft::Impl {
                 )
             );
         }
-        auto samples = std::make_unique<f32[]>(
+        std::vector<f32> samples(
             static_cast<usize>(_format.numChannels) * _format.numFrames
         );
         cl::Buffer gpuSamples(
@@ -289,7 +288,7 @@ struct Stft::Impl {
             CL_TRUE,
             0,
             _format.numChannels * _format.numFrames * sizeof(f32),
-            samples.get()
+            samples.data()
         );
         return samples;
     }
@@ -327,7 +326,7 @@ std::span<const std::complex<f32>> Stft::bins() {
     return _impl->bins();
 }
 
-std::unique_ptr<f32[]> Stft::inverse() const {
+std::vector<f32> Stft::inverse() const {
     return _impl->inverse();
 }
 

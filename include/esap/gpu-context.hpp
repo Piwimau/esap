@@ -12,28 +12,28 @@
 #define VKFFT_BACKEND 3
 #include <vkFFT.h>
 
-#include "esap/func-deleter.hpp"
 #include "esap/types.hpp"
 
 namespace esap {
 
-/**
- * @brief Deletes a `VkFFTApplication` handle.
- *
- * @warning The behavior is undefined if `app` has already been deleted. Also
- * note that this function assumes that `app` was allocated by `operator new`.
- *
- * @param[in, out] app The `VkFFTApplication` handle to delete.
- */
-inline void delete_vkfft_application(VkFFTApplication* app) noexcept {
-    if (app != nullptr) {
+/** @brief Represents a custom deleter for `VkFFTApplication` handles. */
+struct VkFFTApplicationDeleter {
+
+    /**
+     * @brief Deletes a `VkFFTApplication` handle.
+     *
+     * @warning The behavior is undefined if `app` is a `nullptr` or has already
+     * been deleted. Also note that this function assumes that `app` was
+     * allocated by `operator new`.
+     *
+     * @param[in, out] app The `VkFFTApplication` handle to delete.
+     */
+    void operator()(VkFFTApplication* app) const noexcept {
         deleteVkFFT(app);
         delete app;
     }
-}
 
-/** @brief Represents a custom deleter for `VkFFTApplication` handles. */
-using VkFFTApplicationDeleter = FuncDeleter<&delete_vkfft_application>;
+};
 
 /** @brief Represents a context for GPU-accelerated STFT computations. */
 struct GpuContext {

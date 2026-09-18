@@ -89,7 +89,6 @@ include/
     exceptions.hpp
     export.hpp        # Interface of the export module
     filter.hpp        # Types for representing filters
-    func-deleter.hpp
     gpu-context.hpp   # Interface for OpenCL GPU context management
     stft.hpp          # Interface of the STFT module
     types.hpp
@@ -106,6 +105,7 @@ src/
   custom-stft.cpp     # Custom implementation of the STFT module
   export.cpp          # Implementation of the export module
   fftw-stft.cpp       # FFTW-based implementation of the STFT module
+  file-deleter.hpp
   gpu-context.cpp     # Implementation for OpenCL GPU context management
   kernels.cl          # OpenCL kernels for the STFT module
   main.cpp            # Main entry point of the pipeline

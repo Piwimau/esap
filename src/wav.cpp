@@ -11,13 +11,10 @@
 #include <span>
 #include <utility>
 #include "esap/exceptions.hpp"
-#include "esap/func-deleter.hpp"
 #include "esap/wav.hpp"
+#include "file-deleter.hpp"
 
 namespace esap {
-
-/** @brief Represents a custom deleter for `std::FILE` handles. */
-using FileDeleter = FuncDeleter<&std::fclose>;
 
 /** @brief The chunk ID for the `RIFF` chunk. */
 static constexpr std::array<char, 4> RIFF_ID = { 'R', 'I', 'F', 'F' };
@@ -67,7 +64,7 @@ static constexpr i32 I24_MIN = -8388608;
 /** @brief The maximum value of a signed 24-bit integer. */
 static constexpr i32 I24_MAX = 8388607;
 
-Wav::Wav(AudioFormat format, std::unique_ptr<f32[]> samples)
+Wav::Wav(AudioFormat format, std::vector<f32> samples)
     : _format(format),
       _samples(std::move(samples)) {
     assert(_format.numChannels > 0);
@@ -285,7 +282,7 @@ Wav Wav::read(const std::string& path) {
     u16 blockAlign;
     u16 bitsPerSample;
     u32 numFrames;
-    std::unique_ptr<f32[]> samples;
+    std::vector<f32> samples;
     while (
         !foundData && (std::fread(id.data(), id.size(), 1, file.get()) == 1)
     ) {
@@ -351,10 +348,10 @@ Wav Wav::read(const std::string& path) {
                     "Expected 'fmt ' chunk to appear before 'data' chunk."
                 );
             }
-            auto rawSamples = std::make_unique_for_overwrite<byte[]>(size);
+            std::vector<byte> rawSamples(size);
             if (
                 std::fread(
-                    rawSamples.get(),
+                    rawSamples.data(),
                     sizeof(byte),
                     size,
                     file.get()
@@ -365,9 +362,7 @@ Wav Wav::read(const std::string& path) {
                 );
             }
             numFrames = size / blockAlign;
-            samples = std::make_unique_for_overwrite<f32[]>(
-                numChannels * numFrames
-            );
+            samples.resize(numChannels * numFrames);
             for (usize f = 0; f < numFrames; f++) {
                 for (usize c = 0; c < numChannels; c++) {;
                     switch (bitsPerSample) {
@@ -383,7 +378,7 @@ Wav Wav::read(const std::string& path) {
                         case 16: {
                             u16 tmp = read_le<u16>(
                                 std::span<const byte, sizeof(u16)>(
-                                    rawSamples.get()
+                                    rawSamples.data()
                                         + (f * numChannels + c) * sizeof(u16),
                                     sizeof(u16)
                                 )
@@ -396,7 +391,7 @@ Wav Wav::read(const std::string& path) {
                         case 24: {
                             u32 tmp = read_le<u32>(
                                 std::span<const byte, 3>(
-                                    rawSamples.get()
+                                    rawSamples.data()
                                         + (f * numChannels + c) * 3,
                                     3
                                 )
@@ -412,7 +407,7 @@ Wav Wav::read(const std::string& path) {
                         case 32: {
                             u32 tmp = read_le<u32>(
                                 std::span<const byte, sizeof(u32)>(
-                                    rawSamples.get()
+                                    rawSamples.data()
                                         + (f * numChannels + c) * sizeof(u32),
                                     sizeof(u32)
                                 )
@@ -458,8 +453,7 @@ const AudioFormat& Wav::format() const noexcept {
 }
 
 std::span<const f32> Wav::samples() const noexcept {
-    usize count = static_cast<usize>(_format.numChannels) * _format.numFrames;
-    return std::span<const f32>(_samples.get(), count);
+    return std::span<const f32>(_samples);
 }
 
 void Wav::write(const std::string& path) const {

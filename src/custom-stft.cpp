@@ -5,7 +5,7 @@
 namespace esap {
 
 /** @brief The number of bits required to represent half of the window size. */
-constexpr usize HALF_WINDOW_SIZE_BITS = static_cast<usize>(
+static constexpr usize HALF_WINDOW_SIZE_BITS = static_cast<usize>(
     std::countr_zero(Stft::HALF_WINDOW_SIZE)
 );
 
@@ -82,7 +82,7 @@ struct Stft::Impl {
      * corresponds to the frame, and the third dimension corresponds to the bin
      * (between `0` and `Stft::HALF_WINDOW_SIZE`, inclusively).
      */
-    std::unique_ptr<std::complex<f32>[]> _bins;
+    std::vector<std::complex<f32>> _bins;
 
     /**
      * @brief Computes the in-place complex-to-complex (C2C) Fast Fourier
@@ -129,12 +129,10 @@ struct Stft::Impl {
     ) {
         usize numFrames = (format.numFrames + Stft::HOP_SIZE - 1)
             / Stft::HOP_SIZE;
-        auto bins = std::make_unique_for_overwrite<std::complex<f32>[]>(
+        std::vector<std::complex<f32>> bins(
             format.numChannels * numFrames * Stft::NUM_BINS
         );
-        auto buffer = std::make_unique_for_overwrite<std::complex<f32>[]>(
-            Stft::HALF_WINDOW_SIZE
-        );
+        std::vector<std::complex<f32>> buffer(Stft::HALF_WINDOW_SIZE);
         for (usize c = 0; c < format.numChannels; c++) {
             for (usize f = 0; f < numFrames; f++) {
                 for (usize i = 0; i < Stft::HALF_WINDOW_SIZE; i++) {
@@ -152,8 +150,7 @@ struct Stft::Impl {
                 }
                 fft_c2c(
                     std::span<std::complex<f32>, Stft::HALF_WINDOW_SIZE>(
-                        buffer.get(),
-                        Stft::HALF_WINDOW_SIZE
+                        buffer
                     ),
                     FWD_TWIDDLES
                 );
@@ -199,20 +196,15 @@ struct Stft::Impl {
     }
 
     std::span<const std::complex<f32>> bins() {
-        return std::span<const std::complex<f32>>(
-            _bins.get(),
-            _format.numChannels * _numFrames * Stft::NUM_BINS
-        );
+        return std::span<const std::complex<f32>>(_bins);
     }
 
-    std::unique_ptr<f32[]> inverse() const {
-        auto frames = std::make_unique_for_overwrite<f32[]>(
+    std::vector<f32> inverse() const {
+        std::vector<f32> frames(
             static_cast<usize>(_format.numChannels) * _numFrames
                 * Stft::WINDOW_SIZE
         );
-        auto buffer = std::make_unique_for_overwrite<std::complex<f32>[]>(
-            Stft::HALF_WINDOW_SIZE
-        );
+        std::vector<std::complex<f32>> buffer(Stft::HALF_WINDOW_SIZE);
         for (usize c = 0; c < _format.numChannels; c++) {
             for (usize f = 0; f < _numFrames; f++) {
                 usize idx = (c * _numFrames + f) * Stft::NUM_BINS;
@@ -226,8 +218,7 @@ struct Stft::Impl {
                 }
                 fft_c2c(
                     std::span<std::complex<f32>, Stft::HALF_WINDOW_SIZE>(
-                        buffer.get(),
-                        Stft::HALF_WINDOW_SIZE
+                        buffer
                     ),
                     INV_TWIDDLES,
                     true
@@ -241,7 +232,7 @@ struct Stft::Impl {
                 }
             }
         }
-        auto samples = std::make_unique<f32[]>(
+        std::vector<f32> samples(
             static_cast<usize>(_format.numChannels) * _format.numFrames
         );
         for (usize c = 0; c < _format.numChannels; c++) {
@@ -296,7 +287,7 @@ std::span<const std::complex<f32>> Stft::bins() {
     return _impl->bins();
 }
 
-std::unique_ptr<f32[]> Stft::inverse() const {
+std::vector<f32> Stft::inverse() const {
     return _impl->inverse();
 }
 
