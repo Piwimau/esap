@@ -1,3 +1,8 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["numpy"]
+# ///
+
 import argparse
 import csv
 import itertools

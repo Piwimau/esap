@@ -99,7 +99,6 @@ scripts/
   bench.py            # Script for benchmarking the pipeline
   diagrams.py         # Script for generating diagrams for benchmark results
   plot.py             # Script for plotting a spectrum or spectrogram
-  requirements.txt    # External dependencies of the scripts
 src/
   bench.cpp           # Implementation of the benchmarking module
   custom-stft.cpp     # Custom implementation of the STFT module
@@ -189,26 +188,11 @@ besides the C++ standard library. For more details on that, see [the section on
 building the pipeline](#building-the-pipeline).
 
 The benchmarking and plotting scripts are implemented in Python and thus require
-a Python interpreter to be installed on your system. It is highly recommended to
-create a virtual environment to avoid polluting your system-wide Python
-installation with third-party dependencies.
-
-```shell
-python -m venv .venv
-```
-
-The virtual environment must be activated before installing the dependencies and
-running the scripts. This can be done as follows:
-
-```shell
-source .venv/bin/activate # Or .venv\Scripts\activate on Windows.
-```
-
-To install the required dependencies, run the following command:
-
-```shell
-pip install -r scripts/requirements.txt
-```
+a Python interpreter to be installed on your system. In the remainder of this
+document, we assume that you use [`uv`](https://docs.astral.sh/uv/) to manage
+your Python installations, virtual environments, and dependencies. However, a
+more traditional setup using `pip` and `venv` is of course also possible, but
+you have to figure that out on your own.
 
 ### Building the Pipeline
 
@@ -326,7 +310,7 @@ give you a good idea of how to use the pipeline.
   script](scripts/plot.py):
 
   ```shell
-  python scripts/plot.py -s path/to/spectrum.csv
+  uv run scripts/plot.py -s path/to/spectrum.csv
   ```
 
 * To produce a spectrogram for an audio signal, run the following command:
@@ -339,7 +323,7 @@ give you a good idea of how to use the pipeline.
   script](scripts/plot.py):
 
   ```shell
-  python scripts/plot.py -S path/to/spectrogram.csv
+  uv run scripts/plot.py -S path/to/spectrogram.csv
   ```
 
 * To apply a bandpass filter to an audio signal and write the processed signal
@@ -423,7 +407,7 @@ provided, which automates the benchmarking process. To execute this script, run
 the following command from the root directory of the project:
 
 ```shell
-python scripts/bench.py
+uv run scripts/bench.py
 ```
 
 By default, this creates a `benchmark` directory in which various artifacts are

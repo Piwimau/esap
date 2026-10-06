@@ -1,3 +1,8 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["matplotlib", "numpy", "pandas"]
+# ///
+
 import argparse
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
