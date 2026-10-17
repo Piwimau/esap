@@ -261,31 +261,31 @@ options:
 This should produce an output like this:
 
 ```plaintext
-Usage: esap [OPTION]... FILE
-Process the waveform audio file FILE.
+Usage: esap [option]... <path>
+Process a waveform audio file.
 
 Options:
   -b, --benchmark                  Benchmark the execution time (excluding I/O).
-      --bench-format={table|json}  Select the format of the benchmark output (default: table).
-      --warmups=N                  Perform N warmup iterations before benchmarking (default: 10).
-      --iterations=N               Perform N benchmark iterations (default: 100).
-      --phase=PHASE                Benchmark only the specified phase of the audio pipeline (default: end-to-end).
-                                   PHASE can be one of the following:
+      --bench-format=<table|json>  Select the benchmark output format (default: table).
+      --warmups=<n>                Perform <n> warmup iterations before benchmarking (default: 10).
+      --iterations=<n>             Perform <n> benchmark iterations (default: 100).
+      --phase=<phase>              Benchmark only the specified phase of the audio pipeline (default: end-to-end).
+                                   <phase> can be one of the following:
                                      end-to-end
                                      forward-only
                                      inverse-only
                                      filter-only
-  -f, --filter=SPEC                Apply the specified filter.
-                                   SPEC can be one of the following:
-                                     lowpass:FREQ
-                                     highpass:FREQ
-                                     bandpass:FREQ_LOW:FREQ_HIGH
-                                     bandstop:FREQ_LOW:FREQ_HIGH
-                                   FREQ, FREQ_LOW and FREQ_HIGH are cutoff frequencies in Hz.
+  -f, --filter=<spec>              Apply the specified filter.
+                                   <spec> can be one of the following:
+                                     lowpass:<freq>
+                                     highpass:<freq>
+                                     bandpass:<freq-low>:<freq-high>
+                                     bandstop:<freq-low>:<freq-high>
+                                   <freq>, <freq-low> and <freq-high> are cutoff frequencies in Hz.
                                    Zero or more filters can be specified, which are applied in the given order.
-  -o, --output=FILE                Write the processed audio to FILE.
-  -s, --spectrum=FILE              Write the spectrum of the processed audio to FILE in CSV format.
-  -S, --spectrogram=FILE           Write the spectrogram of the processed audio to FILE in CSV format.
+  -o, --output=<path>              Write the processed audio to <path>.
+  -s, --spectrum=<path>            Write the spectrum of the processed audio to <path> in CSV format.
+  -S, --spectrogram=<path>         Write the spectrogram of the processed audio to <path> in CSV format.
   -h, --help                       Display this help and exit.
   -v, --version                    Display version information and exit.
 ```
@@ -367,7 +367,7 @@ measure the execution time of the pipeline. To take advantage of this feature,
 simply specify the `--benchmark` option anywhere in the command:
 
 ```shell
-./build/esap --benchmark <other options> path/to/input.wav
+./build/esap --benchmark [option]... path/to/input.wav
 ```
 
 By default, this will benchmark the execution time of the entire pipeline (i.e.,
@@ -377,7 +377,7 @@ pipeline to benchmark explicitly with the `--phase` option. For example, to
 benchmark only the forward transformation, run the following command:
 
 ```shell
-./build/esap --benchmark --phase=forward-only <other options> path/to/input.wav
+./build/esap --benchmark --phase=forward-only [option]... path/to/input.wav
 ```
 
 Other possible options include the number of warmup iterations (`--warmups`,
