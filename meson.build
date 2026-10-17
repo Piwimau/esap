@@ -66,7 +66,7 @@ elif impl == 'opencl'
     add_project_arguments('-DESAP_USE_OPENCL', language: 'cpp')
     srcs += files('src/gpu-context.cpp', 'src/opencl-stft.cpp')
     deps += dependency('OpenCL')
-    deps += dependency('VkFFT')
+    deps += dependency('VkFFT', include_type: 'system')
 endif
 
 executable('esap', srcs, include_directories: incs, dependencies: deps)
