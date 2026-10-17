@@ -13,11 +13,11 @@ struct Stft::Impl {
         /**
          * @brief Frees memory allocated by FFTW.
          *
+         * @param[in, out] ptr The pointer to the memory to free.
+         *
          * @warning The behavior is undefined if `ptr` is a `nullptr`, or if it
          * has already been freed. Note that this function assumes that `ptr`
          * was obtained from `fftwf_alloc_real()` or `fftwf_alloc_complex()`.
-         *
-         * @param[in, out] ptr The pointer to the memory to free.
          */
         void operator()(void* ptr) const noexcept {
             fftwf_free(ptr);
@@ -31,10 +31,10 @@ struct Stft::Impl {
         /**
          * @brief Destroys an FFTW plan.
          *
+         * @param[in, out] plan The FFTW plan to destroy.
+         *
          * @warning The behavior is undefined if `plan` is a `nullptr`, or if it
          * has already been destroyed.
-         *
-         * @param[in, out] plan The FFTW plan to destroy.
          */
         void operator()(fftwf_plan plan) const noexcept {
             fftwf_destroy_plan(plan);

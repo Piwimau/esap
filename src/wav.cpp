@@ -80,14 +80,14 @@ Wav::Wav(AudioFormat format, std::vector<f32> samples)
 /**
  * @brief Reads an unsigned integer from a specified buffer of bytes.
  *
+ * @tparam T The type of the unsigned integer to read.
+ * @param[in] src The buffer to read the unsigned integer from.
+ * @return The unsigned integer read from the buffer.
+ *
  * @note This function assumes that the buffer contains the bytes of an unsigned
  * integer in little-endian byte order, which is the byte order used in waveform
  * audio files. If the host's native byte order is big-endian, then the function
  * will perform a byte swap to convert the value to the correct byte order.
- *
- * @tparam T The type of the unsigned integer to read.
- * @param[in] src The buffer to read the unsigned integer from.
- * @return The unsigned integer read from the buffer.
  */
 template<std::unsigned_integral T>
 requires (sizeof(T) == 2) || (sizeof(T) == 4)
@@ -104,15 +104,15 @@ static T read_le(std::span<const byte, sizeof(T)> src) noexcept {
 /**
  * @brief Reads an unsigned 24-bit integer from a specified buffer of bytes.
  *
+ * @tparam T The type of the unsigned integer to read.
+ * @param[in] src The buffer to read the unsigned 24-bit integer from.
+ * @return The unsigned 24-bit integer read from the buffer.
+ *
  * @note This function assumes that the buffer contains the bytes of an unsigned
  * 24-bit integer in little-endian byte order, which is the byte order used in
  * waveform audio files. If the host's native byte order is big-endian, then the
  * function will perform a byte swap to convert the value to the correct byte
  * order.
- *
- * @tparam T The type of the unsigned integer to read.
- * @param[in] src The buffer to read the unsigned 24-bit integer from.
- * @return The unsigned 24-bit integer read from the buffer.
  */
 template<std::unsigned_integral T>
 requires (sizeof(T) == 4)
@@ -130,16 +130,16 @@ static T read_le(std::span<const byte, 3> src) noexcept {
 /**
  * @brief Reads an unsigned integer from a specified file stream.
  *
+ * @tparam T The type of the unsigned integer to read.
+ * @param[in] file The file stream to read the unsigned integer from.
+ * @return The unsigned integer read from the file stream.
+ * @throws `std::runtime_error` Thrown when the file stream cannot be read from.
+ *
  * @note This function assumes that the file stream contains the bytes of an
  * unsigned integer in little-endian byte order, which is the byte order used in
  * waveform audio files. If the host's native byte order is big-endian, then the
  * function will perform a byte swap to convert the value to the correct byte
  * order.
- *
- * @tparam T The type of the unsigned integer to read.
- * @param[in] file The file stream to read the unsigned integer from.
- * @return The unsigned integer read from the file stream.
- * @throws `std::runtime_error` Thrown when the file stream cannot be read from.
  */
 template<std::unsigned_integral T>
 requires (sizeof(T) == 2) || (sizeof(T) == 4)
@@ -159,14 +159,14 @@ static T read_le(std::FILE* file) {
 /**
  * @brief Writes an unsigned integer to a specified buffer of bytes.
  *
+ * @tparam T The type of the unsigned integer to write.
+ * @param[out] dst   The buffer to write the unsigned integer to.
+ * @param[in]  value The unsigned integer to write.
+ *
  * @note This function writes the bytes of the unsigned integer to the buffer in
  * little-endian byte order, which is the byte order used in waveform audio
  * files. If the host's native byte order is big-endian, then the function will
  * perform a byte swap to convert the value to the correct byte order.
- *
- * @tparam T The type of the unsigned integer to write.
- * @param[out] dst   The buffer to write the unsigned integer to.
- * @param[in]  value The unsigned integer to write.
  */
 template<std::unsigned_integral T>
 requires (sizeof(T) == 2) || (sizeof(T) == 4)
@@ -183,14 +183,14 @@ static void write_le(std::span<byte, sizeof(T)> dst, T value) noexcept {
 /**
  * @brief Writes an unsigned 24-bit integer to a specified buffer of bytes.
  *
+ * @tparam T The type of the unsigned integer to write.
+ * @param[out] dst   The buffer to write the unsigned 24-bit integer to.
+ * @param[in]  value The unsigned 24-bit integer to write.
+ *
  * @note This function writes the bytes of the unsigned 24-bit integer to the
  * buffer in little-endian byte order, which is the byte order used in waveform
  * audio files. If the host's native byte order is big-endian, then the function
  * will perform a byte swap to convert the value to the correct byte order.
- *
- * @tparam T The type of the unsigned integer to write.
- * @param[out] dst   The buffer to write the unsigned 24-bit integer to.
- * @param[in]  value The unsigned 24-bit integer to write.
  */
 template<std::unsigned_integral T>
 requires (sizeof(T) == 4)

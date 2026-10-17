@@ -56,16 +56,16 @@ public:
      * @brief Computes the Short-Time Fourier Transform (STFT) of an audio
      * signal.
      *
-     * @note Some implementations may leverage GPU acceleration if a valid
-     * GPU context is provided as an argument, which must remain valid for the
-     * lifetime of the `Stft` object returned by this function. Note that the
-     * GPU context may be modified during a call to a method of this class.
-     *
      * @param[in]      format     The format of the original audio signal.
      * @param[in]      samples    The time-domain audio samples to transform.
      * @param[in, out] gpuContext A GPU context that may be used to accelerate
      *                            the computation.
      * @return The Short-Time Fourier Transform (STFT) of the audio signal.
+     *
+     * @note Some implementations may leverage GPU acceleration if a valid
+     * GPU context is provided as an argument, which must remain valid for the
+     * lifetime of the `Stft` object returned by this function. Note that the
+     * GPU context may be modified during a call to a method of this class.
      */
     static Stft forward(
         const AudioFormat& format,

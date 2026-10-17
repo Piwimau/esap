@@ -56,11 +56,11 @@ struct BenchResult {
 /**
  * @brief Returns the current CPU time of the calling thread in nanoseconds.
  *
- * @note This function is an implementation detail and is not intended to be
- * called directly.
- *
  * @return The current CPU time of the calling thread in nanoseconds on success,
  * or `std::nullopt` on failure.
+ *
+ * @note This function is an implementation detail and not intended to be called
+ * directly.
  */
 std::optional<std::chrono::nanoseconds> cpu_time();
 

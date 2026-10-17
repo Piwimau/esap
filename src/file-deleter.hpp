@@ -9,11 +9,11 @@ struct FileDeleter {
     /**
      * @brief Closes a `std::FILE` handle.
      *
+     * @param[in, out] file The `std::FILE` handle to close.
+     *
      * @warning The behavior is undefined if `file` is a `nullptr`, or if it has
      * already been closed. Note that this function assumes that `file` was
      * obtained from `std::fopen()` (or a similar function).
-     *
-     * @param[in, out] file The `std::FILE` handle to close.
      */
     void operator()(std::FILE* file) const noexcept {
         std::fclose(file);

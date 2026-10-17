@@ -218,6 +218,10 @@ struct Args {
     /**
      * @brief Parses the command-line arguments.
      *
+     * @param[in] argc The number of command-line arguments.
+     * @param[in] argv The array of command-line arguments.
+     * @return The parsed command-line arguments.
+     *
      * @warning If the list-devices (`--list-devices`), help (`-h` or `--help`)
      * or version (`-v` or `--version`) option is specified, this function will
      * print the corresponding information to the standard output stream and
@@ -225,10 +229,6 @@ struct Args {
      * parsing (e.g., missing a required argument, unknown option, etc.), a
      * corresponding error message will be printed to the standard error stream
      * and the program is terminated with `EXIT_FAILURE`.
-     *
-     * @param[in] argc The number of command-line arguments.
-     * @param[in] argv The array of command-line arguments.
-     * @return The parsed command-line arguments.
      */
     static Args parse(int argc, char** argv) {
         assert(argc > 0);

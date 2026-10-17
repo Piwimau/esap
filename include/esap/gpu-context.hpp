@@ -16,17 +16,17 @@
 
 namespace esap {
 
-/** @brief Represents a custom deleter for `VkFFTApplication` handles. */
-struct VkFFTApplicationDeleter {
+/** @brief Represents a deleter for resources created by VkFFT. */
+struct VkFFTDeleter {
 
     /**
-     * @brief Deletes a `VkFFTApplication` handle.
+     * @brief Deletes a `VkFFTApplication`.
      *
-     * @warning The behavior is undefined if `app` is a `nullptr` or has already
-     * been deleted. Also note that this function assumes that `app` was
+     * @param[in, out] app The `VkFFTApplication` to delete.
+     *
+     * @warning The behavior is undefined if `app` is a `nullptr`, or if it has
+     * already been deleted. Also note that this function assumes that `app` was
      * allocated by `operator new`.
-     *
-     * @param[in, out] app The `VkFFTApplication` handle to delete.
      */
     void operator()(VkFFTApplication* app) const noexcept {
         deleteVkFFT(app);
@@ -74,10 +74,10 @@ struct GpuContext {
     cl::Buffer windowBuffer;
 
     /** @brief The `VkFFTApplication` for the forward FFT. */
-    std::unique_ptr<VkFFTApplication, VkFFTApplicationDeleter> fwdApp;
+    std::unique_ptr<VkFFTApplication, VkFFTDeleter> fwdApp;
 
     /** @brief The `VkFFTApplication` for the inverse FFT. */
-    std::unique_ptr<VkFFTApplication, VkFFTApplicationDeleter> invApp;
+    std::unique_ptr<VkFFTApplication, VkFFTDeleter> invApp;
 
     /** @brief The number of FFTs computed in the forward transformation. */
     usize numFwdBatches;
