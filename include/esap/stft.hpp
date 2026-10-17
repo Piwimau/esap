@@ -13,6 +13,7 @@
 #ifdef ESAP_USE_OPENCL
     #include "esap/gpu-context.hpp"
 #endif
+#include "esap/overload.hpp"
 #include "esap/types.hpp"
 
 namespace esap {
@@ -154,32 +155,32 @@ constexpr std::array<f32, Stft::NUM_BINS> make_gains(
     std::array<f32, Stft::NUM_BINS> gains;
     std::ranges::fill_n(gains.begin(), Stft::NUM_BINS, 1.0F);
     for (const Filter& filter : filters) {
-        std::visit(
-            [&]<typename T>(const T& f) {
-                for (usize i = 0; i < Stft::NUM_BINS; i++) {
-                    f32 freq = static_cast<f32>(i)
-                        * static_cast<f32>(format.sampleRate)
-                        / static_cast<f32>(Stft::WINDOW_SIZE);
-                    if constexpr (std::is_same_v<T, LowpassFilter>) {
-                        gains[i] *= (freq < f.cutoff) ? 1.0F : 0.0F;
-                    }
-                    else if constexpr (std::is_same_v<T, HighpassFilter>) {
-                        gains[i] *= (freq > f.cutoff) ? 1.0F : 0.0F;
-                    }
-                    else if constexpr (std::is_same_v<T, BandpassFilter>) {
-                        gains[i] *= ((freq > f.lowCutoff) && (freq < f.highCutoff))
+        for (usize i = 0; i < Stft::NUM_BINS; i++) {
+            f32 freq = static_cast<f32>(i) * static_cast<f32>(format.sampleRate)
+                / static_cast<f32>(Stft::WINDOW_SIZE);
+            f32 gain = std::visit(
+                Overload {
+                    [freq](const LowpassFilter& f) {
+                        return (freq < f.cutoff) ? 1.0F : 0.0F;
+                    },
+                    [freq](const HighpassFilter& f) {
+                        return (freq > f.cutoff) ? 1.0F : 0.0F;
+                    },
+                    [freq](const BandpassFilter& f) {
+                        return ((freq > f.lowCutoff) && (freq < f.highCutoff))
+                            ? 1.0F
+                            : 0.0F;
+                    },
+                    [freq](const BandstopFilter& f) {
+                        return ((freq < f.lowCutoff) || (freq > f.highCutoff))
                             ? 1.0F
                             : 0.0F;
                     }
-                    else {
-                        gains[i] *= ((freq < f.lowCutoff) || (freq > f.highCutoff))
-                            ? 1.0F
-                            : 0.0F;
-                    }
-                }
-            },
-            filter
-        );
+                },
+                filter
+            );
+            gains[i] *= gain;
+        }
     }
     return gains;
 }
