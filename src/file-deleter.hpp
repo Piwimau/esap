@@ -3,7 +3,7 @@
 
 #include <cstdio>
 
-/** @brief Represents a custom deleter for `std::FILE` handles. */
+/** @brief A custom deleter for `std::FILE` handles. */
 struct FileDeleter {
 
     /**

@@ -20,7 +20,7 @@
 
 using namespace esap;
 
-/** @brief Represents the format of the benchmark output. */
+/** @brief The format of the benchmark output. */
 enum class BenchFormat {
 
     /**
@@ -36,7 +36,7 @@ enum class BenchFormat {
 
 };
 
-/** @brief Represents a phase of the audio pipeline to benchmark. */
+/** @brief A phase of the audio pipeline to benchmark. */
 enum class Phase {
 
     /**
@@ -56,7 +56,7 @@ enum class Phase {
 
 };
 
-/** @brief Represents a command-line option. */
+/** @brief A command-line option. */
 using Option = struct option;
 
 /** @brief The version information. */
@@ -171,7 +171,7 @@ struct std::formatter<Phase> {
 
 };
 
-/** @brief Represents the parsed command-line arguments. */
+/** @brief The parsed command-line arguments. */
 struct Args {
 
     /** @brief The name of the program. */

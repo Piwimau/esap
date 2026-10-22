@@ -6,7 +6,7 @@
 
 namespace esap {
 
-/** @brief Represents an exception thrown by ESAP. */
+/** @brief An exception thrown by ESAP. */
 class Exception : public std::runtime_error {
 public:
 
@@ -14,10 +14,7 @@ public:
 
 };
 
-/**
- * @brief Represents an exception thrown when a waveform audio file is invalid
- * for whatever reason.
- */
+/** @brief An exception thrown when a waveform audio file is invalid. */
 class InvalidWav : public Exception {
 public:
 
@@ -26,8 +23,8 @@ public:
 };
 
 /**
- * @brief Represents an exception thrown when a waveform audio file is valid but
- * uses an unsupported format (e.g., compressed audio).
+ * @brief An exception thrown when a waveform audio file is valid but uses an
+ * unsupported format (e.g., compressed audio).
  */
 class UnsupportedWav : public Exception {
 public:

@@ -7,7 +7,7 @@ namespace esap {
 
 struct Stft::Impl {
 
-    /** @brief Represents a custom deleter for memory allocated by FFTW. */
+    /** @brief A custom deleter for memory allocated by FFTW. */
     struct FftwFreeDeleter {
 
         /**
@@ -25,9 +25,9 @@ struct Stft::Impl {
 
     };
 
-    /** @brief Represents a custom deleter for FFTW plans. */
+    /** @brief A custom deleter for FFTW plans. */
     struct FftwPlanDeleter {
-
+        
         /**
          * @brief Destroys an FFTW plan.
          *

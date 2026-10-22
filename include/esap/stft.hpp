@@ -19,19 +19,19 @@
 namespace esap {
 
 /**
- * @brief Represents a Short-Time Fourier Transform (STFT) of an audio signal.
+ * @brief A Short-Time Fourier Transform (STFT) of an audio signal.
  */
 class Stft final {
 private:
 
-    /** @brief Represents a concrete implementation of the STFT. */
+    /** @brief A concrete implementation of the STFT. */
     struct Impl;
 
     /** @brief The concrete implementation of the STFT. */
     std::unique_ptr<Impl> _impl;
 
     /**
-     * @brief Initializes a new Short-Time Fourier Transform (STFT) with the
+     * @brief Constructs a new Short-Time Fourier Transform (STFT) with a
      * specified concrete implementation.
      *
      * @param[in] impl The concrete implementation of the STFT.

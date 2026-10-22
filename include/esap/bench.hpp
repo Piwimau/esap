@@ -14,7 +14,7 @@
 
 namespace esap {
 
-/** @brief Represents a benchmark statistic. */
+/** @brief A benchmark statistic. */
 struct BenchStats {
 
     /** @brief The minimum observed time across all iterations. */
@@ -36,7 +36,7 @@ struct BenchStats {
 
 };
 
-/** @brief Represents the result of a benchmark. */
+/** @brief The result of a benchmark. */
 struct BenchResult {
 
     /** @brief The number of warmup iterations performed. */
@@ -115,7 +115,7 @@ BenchResult benchmark(
         std::chrono::nanoseconds min = samples.front();
         std::chrono::nanoseconds max = samples.back();
         usize n = samples.size();
-        std::chrono::nanoseconds median = ((n % 2) == 0)
+        std::chrono::nanoseconds median = (n % 2 == 0)
             ? (samples[n / 2 - 1] + samples[n / 2]) / 2
             : samples[n / 2];
         i64 sum = 0;

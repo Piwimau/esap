@@ -16,7 +16,7 @@
 
 namespace esap {
 
-/** @brief Represents a deleter for resources created by VkFFT. */
+/** @brief A deleter for resources created by VkFFT. */
 struct VkFFTDeleter {
 
     /**
@@ -35,7 +35,7 @@ struct VkFFTDeleter {
 
 };
 
-/** @brief Represents a context for GPU-accelerated STFT computations. */
+/** @brief A context for GPU-accelerated STFT computations. */
 struct GpuContext {
 
     /** @brief The device associated with this GPU context. */

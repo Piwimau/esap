@@ -5,7 +5,7 @@
 
 namespace esap {
 
-/** @brief Represents the format of an audio signal. */
+/** @brief The format of an audio signal. */
 struct AudioFormat {
 
     /** @brief The number of audio channels. */

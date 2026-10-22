@@ -9,7 +9,7 @@
 
 namespace esap {
 
-/** @brief Represents a waveform audio file. */
+/** @brief A waveform audio file. */
 class Wav final {
 private:
 
@@ -26,8 +26,8 @@ private:
 public:
 
     /**
-     * @brief Initializes a new waveform audio file with the specified format
-     * and samples.
+     * @brief Constructs a new waveform audio file with the specified format and
+     * samples.
      *
      * @param[in] format  The audio format of the waveform audio file.
      * @param[in] samples The audio samples, normalized to the range

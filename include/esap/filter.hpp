@@ -6,7 +6,7 @@
 
 namespace esap {
 
-/** @brief Represents a lowpass filter. */
+/** @brief A lowpass filter. */
 struct LowpassFilter {
 
     /** @brief The cutoff frequency (in Hz). */
@@ -14,7 +14,7 @@ struct LowpassFilter {
 
 };
 
-/** @brief Represents a highpass filter. */
+/** @brief A highpass filter. */
 struct HighpassFilter {
 
     /** @brief The cutoff frequency (in Hz). */
@@ -22,7 +22,7 @@ struct HighpassFilter {
 
 };
 
-/** @brief Represents a bandpass filter. */
+/** @brief A bandpass filter. */
 struct BandpassFilter {
 
     /** @brief The lower cutoff frequency (in Hz). */
@@ -33,7 +33,7 @@ struct BandpassFilter {
 
 };
 
-/** @brief Represents a bandstop filter. */
+/** @brief A bandstop filter. */
 struct BandstopFilter {
 
     /** @brief The lower cutoff frequency (in Hz). */
@@ -44,7 +44,7 @@ struct BandstopFilter {
 
 };
 
-/** @brief Represents a filter. */
+/** @brief A filter. */
 using Filter = std::variant<
     LowpassFilter,
     HighpassFilter,
