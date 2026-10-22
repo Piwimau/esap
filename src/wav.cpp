@@ -70,10 +70,8 @@ Wav::Wav(AudioFormat format, std::vector<f32> samples)
     assert(_format.numChannels > 0);
     assert(_format.sampleRate > 0);
     assert(
-        (_format.bitsPerSample == 8)
-            || (_format.bitsPerSample == 16)
-            || (_format.bitsPerSample == 24)
-            || (_format.bitsPerSample == 32)
+        _format.bitsPerSample == 8 || _format.bitsPerSample == 16
+            || _format.bitsPerSample == 24 || _format.bitsPerSample == 32
     );
 }
 
@@ -283,9 +281,7 @@ Wav Wav::read(const std::string& path) {
     u16 bitsPerSample;
     u32 numFrames;
     std::vector<f32> samples;
-    while (
-        !foundData && (std::fread(id.data(), id.size(), 1, file.get()) == 1)
-    ) {
+    while (!foundData && std::fread(id.data(), id.size(), 1, file.get()) == 1) {
         size = read_le<u32>(file.get());
         if (id == FMT_ID) {
             u16 audioFormat = read_le<u16>(file.get());
@@ -325,8 +321,8 @@ Wav Wav::read(const std::string& path) {
             // We only support the common uncompressed PCM audio format with
             // either 8, 16, 24, or 32 bits per sample for simplicity.
             if (
-                (bitsPerSample != 8) && (bitsPerSample != 16)
-                    && (bitsPerSample != 24) && (bitsPerSample != 32)
+                bitsPerSample != 8 && bitsPerSample != 16
+                    && bitsPerSample != 24 && bitsPerSample != 32
             ) {
                 throw UnsupportedWav(
                     std::format(
@@ -475,8 +471,8 @@ void Wav::write(const std::string& path) const {
     }
     write_le<u32>(file.get(), riffChunkSize);
     if (
-        (std::fwrite(WAVE_ID.data(), WAVE_ID.size(), 1, file.get()) != 1)
-            || (std::fwrite(FMT_ID.data(), FMT_ID.size(), 1, file.get()) != 1)
+        std::fwrite(WAVE_ID.data(), WAVE_ID.size(), 1, file.get()) != 1
+            || std::fwrite(FMT_ID.data(), FMT_ID.size(), 1, file.get()) != 1
     ) {
         throw std::runtime_error(std::format("Failed to write to '{}'.", path));
     }
@@ -597,7 +593,7 @@ void Wav::write(const std::string& path) const {
     ) {
         throw std::runtime_error(std::format("Failed to write to '{}'.", path));
     }
-    if ((dataChunkSize % 2) != 0) {
+    if (dataChunkSize % 2 != 0) {
         byte pad = static_cast<byte>(0);
         if (std::fwrite(&pad, sizeof(byte), 1, file.get()) != 1) {
             throw std::runtime_error(

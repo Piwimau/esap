@@ -167,12 +167,12 @@ constexpr std::array<f32, Stft::NUM_BINS> make_gains(
                         return (freq > f.cutoff) ? 1.0F : 0.0F;
                     },
                     [freq](const BandpassFilter& f) {
-                        return ((freq > f.lowCutoff) && (freq < f.highCutoff))
+                        return (freq > f.lowCutoff && freq < f.highCutoff)
                             ? 1.0F
                             : 0.0F;
                     },
                     [freq](const BandstopFilter& f) {
-                        return ((freq < f.lowCutoff) || (freq > f.highCutoff))
+                        return (freq < f.lowCutoff || freq > f.highCutoff)
                             ? 1.0F
                             : 0.0F;
                     }
