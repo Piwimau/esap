@@ -2,7 +2,6 @@
 #define ESAP_EXCEPTIONS_HPP
 
 #include <stdexcept>
-#include <string>
 
 namespace esap {
 

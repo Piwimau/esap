@@ -6,7 +6,6 @@
 #include <getopt.h>
 #include <optional>
 #include <print>
-#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>

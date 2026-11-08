@@ -7,7 +7,6 @@
 #include <cstdio>
 #include <format>
 #include <memory>
-#include <optional>
 #include <span>
 #include <utility>
 #include "esap/exceptions.hpp"
